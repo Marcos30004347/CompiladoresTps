@@ -3,7 +3,18 @@
 #include "montador.h"
 
 int main(int argc, char *argv[]) {
-    // TODO: executar o montador...
-    std::cout << "Hello World" << std::endl;
+    // Parser parser(argv[1]);
+
+    // ASTNode* root = parser.parse();
+
+    // std::cout << "AST TREE:" << std::endl;
+
+    // parser.print(root);
+
+    Montador assembler(argv[1]);
+
+    assembler.phaseOne();
+    assembler.phaseTwo();
+
     return 0;
 }

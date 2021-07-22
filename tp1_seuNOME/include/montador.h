@@ -15,7 +15,7 @@
 #include <string.h>
 #include <string>
 #include <assert.h>
-
+#include <iostream>
 class Token 
 {
 public:
@@ -78,6 +78,14 @@ public:
     {
         delete this->t_value;
     }
+
+    Token& operator = (const Token& other)
+    {
+        this->t_kind = other.t_kind;
+        this->t_value = (char*)malloc(sizeof(char) * strlen(other.t_value));
+        strcpy(this->t_value, other.t_value);
+        return *this;
+    }
 };
 
 class Lexer
@@ -90,8 +98,11 @@ public:
         LEXER_EOF,
     };
 
-    char    l_curr_char;
-    size_t  l_head;
+    char l_curr_char;
+    int  l_head;
+    int  l_line;
+    int  l_line_pos;
+
     std::ifstream l_src;
 
     Token l_current_token;
@@ -104,21 +115,37 @@ public:
 
     status readNextToken()
     {
-        if(this->l_head != EOF)
-        {
-            this->l_current_token = Token(Token::TOKEN_EOF, "\0");
-            return LEXER_EOF;
-        }
-
         while(
-            this->skipComments() &&
-            this->skipSpaces() &&
+            this->skipComments() ||
+            this->skipSpaces() ||
             this->skipBreakLines()
         ){}
 
-        if(isdigit(this->l_curr_char))      this->collectNumber();
+        if(this->l_head == EOF)
+        {
+            this->l_current_token = Token(Token::TOKEN_EOF, "EOF");
+            return LEXER_EOF;
+        }
+
+        // if(this->l_current_token.t_kind == Token::TOKEN_EOF)
+        // {
+        //     return LEXER_EOF;
+        // }
+
+        if(this->l_curr_char == ':')
+        {
+            this->l_current_token = Token(Token::TOKEN_TWO_POINTS, ":");
+            this->advance();
+        }
+        else if(isdigit(this->l_curr_char)) this->collectNumber();
         else if(isalnum(this->l_curr_char)) this->collectToken();
-        
+        else
+        {
+            std::cout << "Syntax Error at character: '" << this->l_curr_char << "' in line " << this->l_line << " at position " << this->l_line_pos << "\n";
+            // this->l_current_token = Token(Token::TOKEN_SYMBOL, ":");
+            // this->advance();
+        }
+
         return LEXER_SUCCESS;
     }
 
@@ -127,41 +154,47 @@ public:
         if(!this->l_src.get(this->l_curr_char))
         {
             this->l_head = EOF;
-            return LEXER_EOF;
+            return LEXER_SUCCESS;
         }
     
         this->l_head++;
+        this->l_line_pos++;
+
         return LEXER_SUCCESS;
     }
 
     int skipComments()
     {
-        int skiped = 0;
+        int skipped = 0;
         while(this->l_curr_char == ';')
         {
             while(this->l_curr_char != '\n')
             {
-                if(this->advance() != LEXER_SUCCESS)
+                this->advance();
+                if(this->l_head == EOF)
                 {
-                    return 0;
+                    return skipped;
                 }
             }
 
-            skiped++;
+            skipped++;
         }
         
-        return skiped;
+        return skipped;
     }
 
     int skipSpaces()
     {
         int skipped = 0;
+        
         while(this->l_curr_char == ' ')
         {
-            if(this->advance() != LEXER_SUCCESS)
+            this->advance();
+            if(this->l_head == EOF)
             {
-                return 0;
+                return skipped;
             }
+
             skipped++;
         }
         
@@ -170,11 +203,15 @@ public:
     int skipBreakLines()
     {
         int skipped = 0;
+
         while(this->l_curr_char == '\n')
         {
-            if(this->advance() != LEXER_SUCCESS)
+            this->l_line++;
+            this->l_line_pos = 1;
+            this->advance();
+            if(this->l_head == EOF)
             {
-                return 0;
+                return skipped;
             }
             skipped++;
         }
@@ -186,18 +223,22 @@ public:
         char* identifier = (char*)malloc(sizeof(char));
     
         identifier[0] = '\0';
-    
+        int p = 0;
         while(isalnum(this->l_curr_char) || isdigit(this->l_curr_char))
         {
-            identifier = (char*) realloc(identifier, (strlen(identifier) + 1)*sizeof(char));
-            identifier[strlen(identifier)] = this->l_curr_char;
+            identifier = (char*)realloc(identifier, (p + 2)*sizeof(char));
+            identifier[p] = this->l_curr_char;
+            identifier[p+1] = '\0';
+            p++;
             this->advance();
         }
-        
+        // std::cout << "HAHAHHAAH: " <<  identifier << std::endl;
+     
         if(strlen(identifier) == 2 && identifier[0] == 'R' && isdigit(identifier[1]))
         {
-            l_current_token = Token(Token::TOKEN_REG, std::to_string(identifier[1]).c_str());
+            l_current_token = Token(Token::TOKEN_REG, identifier);
         }
+        else if(strcmp(identifier, "HALT") == 0)    l_current_token = Token(Token::TOKEN_HALT, identifier);
         else if(strcmp(identifier, "READ") == 0)    l_current_token = Token(Token::TOKEN_READ, identifier);
         else if(strcmp(identifier, "LOAD") == 0)    l_current_token = Token(Token::TOKEN_LOAD, identifier);
         else if(strcmp(identifier, "STORE") == 0)   l_current_token = Token(Token::TOKEN_STORE, identifier);
@@ -222,7 +263,7 @@ public:
         else if(strcmp(identifier, "WORD") == 0)    l_current_token = Token(Token::TOKEN_WORD, identifier);
         else if(strcmp(identifier, "END") == 0)     l_current_token = Token(Token::TOKEN_END, identifier);
         else                                        l_current_token = Token(Token::TOKEN_SYMBOL, identifier);
-        
+
         delete identifier;
         
         return LEXER_SUCCESS;
@@ -233,15 +274,16 @@ public:
         char* identifier = (char*)malloc(sizeof(char));
     
         identifier[0] = '\0';
-
+    
+        int p = 0;
+    
         while(isdigit(this->l_curr_char))
         {
-            identifier = (char*) realloc(identifier, (strlen(identifier) + 1)*sizeof(char));
-            identifier[strlen(identifier)] = this->l_curr_char;
-            if(this->advance() == LEXER_EOF)
-            {
-                return LEXER_EOF;
-            }
+            identifier = (char*)realloc(identifier, (p + 2)*sizeof(char));
+            identifier[p] = this->l_curr_char;
+            identifier[p+1] = '\0';
+            p++;
+            this->advance();
         }
         
         this->l_current_token = Token(Token::TOKEN_NUM, identifier);
@@ -266,7 +308,11 @@ public:
     Lexer(const char* filename)
     {
         this->l_head = 0;
+        this->l_line = 1;
+        this->l_line_pos = 1;
         this->l_src.open(filename, std::ifstream::in);
+        this->l_curr_char = l_src.get();
+        this->l_src.seekg (0, this->l_src.beg);
     }
 
     ~Lexer()
@@ -331,6 +377,7 @@ struct ASTNode
 
 class Parser
 {
+public:
     Lexer* p_lex;
     Parser(const char* filename)
     {
@@ -344,6 +391,7 @@ class Parser
         
         while(node)
         {
+            // std::cout << node->an_kind <<" "<< node->an_identifier << std::endl;
             node->an_next = parseInstruction();
             node = node->an_next;
         }
@@ -354,7 +402,7 @@ class Parser
     ASTNode* parseInstruction()
     {
         Token token = this->p_lex->readToken();
-
+    
         if(token.t_kind == Token::TOKEN_HALT)
         {
             return new ASTNode(ASTNode::AST_HALT, token.t_value);
@@ -505,9 +553,9 @@ class Parser
     
         if(token.t_kind == Token::TOKEN_WORD)
         {
-            ASTNode* call_op = new ASTNode(ASTNode::AST_CALL, token.t_value);
-            call_op->addArgument(this->parseSymbol());
-            return call_op;
+            ASTNode* word_op = new ASTNode(ASTNode::AST_CALL, token.t_value);
+            word_op->addArgument(this->parseSymbol());
+            return word_op;
         }
 
         if(token.t_kind == Token::TOKEN_RET)
@@ -522,16 +570,15 @@ class Parser
             return word_op;
         }
 
-    
         if(token.t_kind == Token::TOKEN_SYMBOL)
         {
             ASTNode* label_op = new ASTNode(ASTNode::AST_LABEL, token.t_value);
 
             Token two_points = this->p_lex->readToken();
-
+    
             assert(two_points.t_kind == Token::TOKEN_TWO_POINTS);
 
-            return new ASTNode(ASTNode::AST_END, token.t_value);
+            return label_op;
         }
     
 
@@ -544,6 +591,8 @@ class Parser
         {
             return nullptr;
         }
+
+        return nullptr;
     }
 
     ASTNode* parseRegister()
@@ -564,6 +613,7 @@ class Parser
     ASTNode* parseSymbol()
     {
         Token sym_token = this->p_lex->readToken();
+
         ASTNode* sym_ast = nullptr;
 
         if(sym_token.t_kind == Token::TOKEN_NUM)
@@ -577,45 +627,174 @@ class Parser
 
         return sym_ast;
     }
+
+    void print(ASTNode* root, int tabs = 0, bool break_line = false)
+    {
+        if(!root) return;
+        if(break_line) printf("\n");
+    
+        printf("%*c", tabs, ' ');
+        if(break_line) printf("|___");
+    
+        std::cout << "<" << root->an_kind << ", " << root->an_identifier << "> ";
+    
+        for(ASTNode* arg : root->an_args)
+        {
+            print(arg, 0, false);
+        }
+        print(root->an_next, tabs+3, true);
+    }
 };
 
 class Montador
 {
 public:
-    std::map<std::string, std::string> symbol_table;
+    // "Symbol -> address"
+    std::map<std::string, int> symbol_table;
+    
+    // "Instruction -> code, size"
+    std::map<std::string, std::tuple<int, int>> op_table;
+    
+    // "Pseudo Instruction -> size"
+    std::map<std::string, std::tuple<int>> pop_table;
+    
+    size_t program_size;
 
+    Parser* parser;
+    ASTNode* root;
+    
     Montador(const char* src)
     {
-        
+        this->parser = new Parser(src);
+        this->root = this->parser->parse();    
+
+        op_table["HALT"]    = std::tuple<int,int>(0, 1);
+        op_table["LOAD"]    = std::tuple<int,int>(1, 3);
+        op_table["STORE"]   = std::tuple<int,int>(2, 3);
+        op_table["READ"]    = std::tuple<int,int>(3, 2);
+        op_table["WRITE"]   = std::tuple<int,int>(4, 2);
+        op_table["COPY"]    = std::tuple<int,int>(5, 3);
+        op_table["PUSH"]    = std::tuple<int,int>(6, 2);
+        op_table["POP"]     = std::tuple<int,int>(7, 2);
+        op_table["ADD"]     = std::tuple<int,int>(8, 3);
+        op_table["SUB"]     = std::tuple<int,int>(9, 3);
+        op_table["MUL"]     = std::tuple<int,int>(10, 3);
+        op_table["DIV"]     = std::tuple<int,int>(11, 3);
+        op_table["MOD"]     = std::tuple<int,int>(12, 3);
+        op_table["AND"]     = std::tuple<int,int>(13, 3);
+        op_table["OR"]      = std::tuple<int,int>(14, 3);
+        op_table["NOT"]     = std::tuple<int,int>(15, 2);
+        op_table["JUMP"]    = std::tuple<int,int>(16, 2);
+        op_table["JZ"]      = std::tuple<int,int>(17, 2);
+        op_table["JN"]      = std::tuple<int,int>(18, 2);
+        op_table["CALL"]    = std::tuple<int,int>(19, 2);
+        op_table["RET"]     = std::tuple<int,int>(20, 1);
+    
+        pop_table["WORD"]   = std::tuple<int>(1);
+        pop_table["END"]   = std::tuple<int>(0);
     }
 
-    void phaseOne(ASTNode* root)
+    void phaseOne()
     {
-        ASTNode* node = root;
+        ASTNode* node = this->root;
 
         int location_counter = 0;
 
-        while(node)
+        while(node->an_kind != ASTNode::AST_END)
         {
-            if(node->an_kind == ASTNode::AST_LABEL)
+            if(this->op_table.find(node->an_identifier) != this->op_table.end())
             {
-                symbol_table[node->an_identifier] = std::to_string(location_counter);
-            }
-            else
-            {
+                location_counter += std::get<1>(this->op_table[node->an_identifier]);
                 for(ASTNode* arg : node->an_args)
-                {
                     if(arg->an_kind == ASTNode::AST_SYMBOL)
-                    {
-                        symbol_table[node->an_identifier] = "undefined";
-                    }
+                        if(symbol_table.find(node->an_identifier) == symbol_table.end())
+                            symbol_table[node->an_identifier] = -1;
+            }
+            else if(this->pop_table.find(node->an_identifier) != this->pop_table.end())
+            {
+                location_counter += std::get<0>(this->pop_table[node->an_identifier]);
+            }
+            else if(node->an_kind == ASTNode::AST_LABEL)
+            {
+                if(
+                    symbol_table.find(node->an_identifier) == symbol_table.end() ||
+                    symbol_table[node->an_identifier] == -1
+                )
+                {
+                    symbol_table[node->an_identifier] = location_counter;
+                } 
+                else
+                {
+                    std::cout << node->an_identifier << " already defined at " << symbol_table[node->an_identifier] << "\n";
                 }
-
-                location_counter++;
             }
     
             node = node->an_next;
         }
+
+        this->program_size = location_counter;
+    }
+
+    void phaseTwo()
+    {
+        int* program = new int[this->program_size]{0};
+
+        ASTNode* node = this->root;
+
+        int location_counter = 0;
+
+        while(node->an_kind != ASTNode::AST_END)
+        {
+            if(this->op_table.find(node->an_identifier) != this->op_table.end())
+            {
+                program[location_counter] = std::get<0>(this->op_table[node->an_identifier]);
+
+                int i = 1;
+
+                for(ASTNode* arg : node->an_args)
+                {
+                    if(arg->an_kind == ASTNode::AST_SYMBOL)
+                    {
+                        program[location_counter + i] = symbol_table[arg->an_identifier] - location_counter - std::get<1>(this->op_table[node->an_identifier]);
+                    }
+                    else if(arg->an_kind == ASTNode::AST_REG)
+                    {
+                        program[location_counter + i] = atoi(&(arg->an_identifier[1]));
+                    }
+                    else if(arg->an_kind == ASTNode::AST_NUM)
+                    {
+                        program[location_counter + i] = atoi(arg->an_identifier);
+                    }
+                    i++;
+                }
+
+                location_counter += std::get<1>(this->op_table[node->an_identifier]);
+            }
+            else if(this->pop_table.find(node->an_identifier) != this->pop_table.end())
+            {
+                if(strcmp(node->an_identifier, "WORD") == 0)
+                {
+                    program[location_counter] = atoi(node->an_args[0]->an_identifier);
+                }
+    
+                location_counter += std::get<0>(this->pop_table[node->an_identifier]);
+            }
+
+            node = node->an_next;
+        }
+
+        std::cout << "MV-EXE\n\n";
+    
+        std::cout << location_counter << " ";
+        std::cout << 100 << " ";
+        std::cout << 999 << " ";
+        std::cout << 100 << "\n\n";
+
+        for(int i=0; i<(int)this->program_size; i++)
+        {
+            std::cout << program[i] << " ";
+        }
+        std::cout << "\n";
     }
 };
 
