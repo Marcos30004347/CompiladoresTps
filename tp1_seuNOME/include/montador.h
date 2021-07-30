@@ -16,6 +16,7 @@
 #include <string>
 #include <assert.h>
 #include <iostream>
+
 class Token 
 {
 public:
@@ -119,18 +120,15 @@ public:
             this->skipComments() ||
             this->skipSpaces() ||
             this->skipBreakLines()
-        ){}
+        ){
+        }
+
 
         if(this->l_head == EOF)
         {
             this->l_current_token = Token(Token::TOKEN_EOF, "EOF");
             return LEXER_EOF;
         }
-
-        // if(this->l_current_token.t_kind == Token::TOKEN_EOF)
-        // {
-        //     return LEXER_EOF;
-        // }
 
         if(this->l_curr_char == ':')
         {
@@ -218,6 +216,7 @@ public:
         
         return skipped;
     }
+
     status collectToken()
     {
         char* identifier = (char*)malloc(sizeof(char));
@@ -226,11 +225,17 @@ public:
         int p = 0;
         while(isalnum(this->l_curr_char) || isdigit(this->l_curr_char))
         {
+
             identifier = (char*)realloc(identifier, (p + 2)*sizeof(char));
             identifier[p] = this->l_curr_char;
             identifier[p+1] = '\0';
             p++;
             this->advance();
+
+            if(this->l_head == EOF)
+            {
+                break;
+            }
         }
         // std::cout << "HAHAHHAAH: " <<  identifier << std::endl;
      
@@ -284,6 +289,11 @@ public:
             identifier[p+1] = '\0';
             p++;
             this->advance();
+
+            if(this->l_head == EOF)
+            {
+                break;
+            }
         }
         
         this->l_current_token = Token(Token::TOKEN_NUM, identifier);
@@ -388,10 +398,9 @@ public:
     {
         ASTNode* node = parseInstruction();
         ASTNode* root = node;
-        
+    
         while(node)
         {
-            // std::cout << node->an_kind <<" "<< node->an_identifier << std::endl;
             node->an_next = parseInstruction();
             node = node->an_next;
         }
@@ -573,11 +582,8 @@ public:
         if(token.t_kind == Token::TOKEN_SYMBOL)
         {
             ASTNode* label_op = new ASTNode(ASTNode::AST_LABEL, token.t_value);
-
             Token two_points = this->p_lex->readToken();
-    
-            assert(two_points.t_kind == Token::TOKEN_TWO_POINTS);
-
+            // assert(two_points.t_kind == Token::TOKEN_TWO_POINTS);
             return label_op;
         }
     
@@ -738,8 +744,18 @@ public:
     void phaseTwo()
     {
         int* program = new int[this->program_size]{0};
-
+        
         ASTNode* node = this->root;
+        
+        int START = 0;
+        
+        while(node->an_kind == ASTNode::AST_LABEL)
+        {
+            START++;
+            node = node->an_next->an_next;
+        }
+        
+        node = this->root;
 
         int location_counter = 0;
 
@@ -784,11 +800,13 @@ public:
         }
 
         std::cout << "MV-EXE\n\n";
-    
-        std::cout << location_counter << " ";
-        std::cout << 100 << " ";
-        std::cout << 999 << " ";
-        std::cout << 100 << "\n\n";
+        int N = 100;
+        int K = location_counter;
+        
+        std::cout << K << " ";
+        std::cout << N << " ";
+        std::cout << N+K+1000 << " ";
+        std::cout << N+START << "\n\n";
 
         for(int i=0; i<(int)this->program_size; i++)
         {
