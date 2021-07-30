@@ -562,7 +562,7 @@ public:
     
         if(token.t_kind == Token::TOKEN_WORD)
         {
-            ASTNode* word_op = new ASTNode(ASTNode::AST_CALL, token.t_value);
+            ASTNode* word_op = new ASTNode(ASTNode::AST_WORD, token.t_value);
             word_op->addArgument(this->parseSymbol());
             return word_op;
         }
@@ -697,7 +697,7 @@ public:
         op_table["RET"]     = std::tuple<int,int>(20, 1);
     
         pop_table["WORD"]   = std::tuple<int>(1);
-        pop_table["END"]   = std::tuple<int>(0);
+        pop_table["END"]    = std::tuple<int>(0);
     }
 
     void phaseOne()
@@ -751,10 +751,22 @@ public:
         
         while(node->an_kind == ASTNode::AST_LABEL)
         {
-            START++;
-            node = node->an_next->an_next;
+            node = node->an_next;
+            // Add to start the size of the instruction defined in the label
+            if(
+                node->an_kind == ASTNode::AST_WORD ||
+                node->an_kind == ASTNode::AST_END
+            )
+            {
+                START += std::get<0>(this->pop_table[node->an_identifier]);
+            }
+            else
+            {
+                START += std::get<1>(this->op_table[node->an_identifier]);
+            }
+            node = node->an_next;
         }
-        
+
         node = this->root;
 
         int location_counter = 0;
