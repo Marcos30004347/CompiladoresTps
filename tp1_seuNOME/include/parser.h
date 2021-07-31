@@ -48,6 +48,7 @@ struct ASTNode
     ASTNode* an_next;
 
     ASTNode(ASTKind kind, const char* identifier);
+    ~ASTNode();
     void addArgument(ASTNode* arg);
 };
 

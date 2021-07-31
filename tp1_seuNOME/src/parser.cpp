@@ -9,6 +9,18 @@ ASTNode::ASTNode(ASTKind kind, const char* identifier)
     this->an_next = nullptr;
 }
 
+ASTNode::~ASTNode()
+{
+    if(this->an_next)
+        delete this->an_next;
+    
+    for(ASTNode* arg : this->an_args)
+    {
+        delete arg;
+    }
+}
+
+
 void ASTNode::addArgument(ASTNode* arg)
 {
     this->an_args.push_back(arg);
