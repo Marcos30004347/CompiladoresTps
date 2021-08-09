@@ -1,9 +1,17 @@
 #include <iostream>
 
-#include "ligador.h"
+#include "ligador.hpp"
 
 int main(int argc, char *argv[]) {
-    // TODO: executar o ligador...
-    std::cout << "Hello World" << std::endl;
+
+    Linker *linker = new Linker();
+
+    for (int i=1; i<argc; i++) {
+        string fileName = argv[i];
+        linker->readFile(fileName, i-1);
+    }
+
+    linker->run();
+
     return 0;
 }

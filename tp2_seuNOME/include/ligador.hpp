@@ -18,16 +18,21 @@ struct File {
 
 class Linker {
 private:
-    vector<File> files;
+    vector<File*> files;
     vector<string> translation;
     map<string, pair<int, int>> labelTable;
 
 public:
-    void readFile(string filename);
+    Linker();
+    ~Linker();
+    void readFile(string filename, int fileIdx);
     void addLabelToTable(string label, int relativePos, int fileIdx);
     void addToTranslation(string value);
     int getNewPosition(int currFile, string label);
     void run();
+
+    //debug
+    void printTable();
 };
 
 
