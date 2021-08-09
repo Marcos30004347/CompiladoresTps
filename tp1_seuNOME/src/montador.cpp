@@ -1,7 +1,5 @@
 #include "montador.h"
 
-
-
 Montador::Montador(const char* src)
 {
     this->parser = new Parser(src);
@@ -31,6 +29,8 @@ Montador::Montador(const char* src)
 
     pop_table["WORD"]   = std::tuple<int>(1);
     pop_table["END"]    = std::tuple<int>(0);
+
+    // this->symbol_table = std::map<std::string, adrr>(0);
 }
 
 void Montador::phaseOne()
@@ -44,10 +44,17 @@ void Montador::phaseOne()
         if(this->op_table.find(node->an_identifier) != this->op_table.end())
         {
             location_counter += std::get<1>(this->op_table[node->an_identifier]);
+
             for(ASTNode* arg : node->an_args)
+            {
                 if(arg->an_kind == ASTNode::AST_SYMBOL)
+                {
                     if(symbol_table.find(node->an_identifier) == symbol_table.end())
-                        symbol_table[node->an_identifier] = -1;
+                    {
+                        symbol_table.insert({ arg->an_identifier, {-1} });
+                    }
+                }
+            }
         }
         else if(this->pop_table.find(node->an_identifier) != this->pop_table.end())
         {
@@ -57,15 +64,11 @@ void Montador::phaseOne()
         {
             if(
                 symbol_table.find(node->an_identifier) == symbol_table.end() ||
-                symbol_table[node->an_identifier] == -1
+                symbol_table[node->an_identifier].value == -1
             )
             {
-                symbol_table[node->an_identifier] = location_counter;
+                symbol_table[node->an_identifier].value = location_counter;
             } 
-            else
-            {
-                std::cout << node->an_identifier << " already defined at " << symbol_table[node->an_identifier] << "\n";
-            }
         }
 
         node = node->an_next;
@@ -76,8 +79,8 @@ void Montador::phaseOne()
 
 void Montador::phaseTwo()
 {
-    int* program = new int[this->program_size]{0};
-    
+    std::string* program = new std::string[this->program_size]{"\0"};
+
     ASTNode* node = this->root;
     
     int START = 0;
@@ -108,7 +111,7 @@ void Montador::phaseTwo()
     {
         if(this->op_table.find(node->an_identifier) != this->op_table.end())
         {
-            program[location_counter] = std::get<0>(this->op_table[node->an_identifier]);
+            program[location_counter] = std::to_string(std::get<0>(this->op_table[node->an_identifier]));
 
             int i = 1;
 
@@ -116,15 +119,22 @@ void Montador::phaseTwo()
             {
                 if(arg->an_kind == ASTNode::AST_SYMBOL)
                 {
-                    program[location_counter + i] = symbol_table[arg->an_identifier] - location_counter - std::get<1>(this->op_table[node->an_identifier]);
+                    if(symbol_table[arg->an_identifier].value != -1)
+                    {
+                        program[location_counter + i] = std::to_string(symbol_table[arg->an_identifier].value - location_counter - std::get<1>(this->op_table[node->an_identifier]));
+                    }
+                    else
+                    {
+                        program[location_counter + i] = arg->an_identifier;
+                    }
                 }
                 else if(arg->an_kind == ASTNode::AST_REG)
                 {
-                    program[location_counter + i] = atoi(&(arg->an_identifier[1]));
+                    program[location_counter + i] = arg->an_identifier[1];
                 }
                 else if(arg->an_kind == ASTNode::AST_NUM)
                 {
-                    program[location_counter + i] = atoi(arg->an_identifier);
+                    program[location_counter + i] = arg->an_identifier;
                 }
                 i++;
             }
@@ -135,7 +145,7 @@ void Montador::phaseTwo()
         {
             if(strcmp(node->an_identifier, "WORD") == 0)
             {
-                program[location_counter] = atoi(node->an_args[0]->an_identifier);
+                program[location_counter] = node->an_args[0]->an_identifier;
             }
 
             location_counter += std::get<0>(this->pop_table[node->an_identifier]);
@@ -144,14 +154,34 @@ void Montador::phaseTwo()
         node = node->an_next;
     }
 
-    std::cout << "MV-EXE\n\n";
-    int N = 100;
-    int K = location_counter;
+    int count = 0;
+    for(std::map<std::string, adrr>::iterator it = this->symbol_table.begin(); it != this->symbol_table.end(); it++)
+    {
+        if(it->second.value != -1)
+        {
+            count++;
+        }
+    }
+
+    std::cout << count << "\n";
+
+    for(std::map<std::string, adrr>::iterator it = this->symbol_table.begin(); it != this->symbol_table.end(); it++)
+    {
+        if(it->second.value != -1)
+        {
+            std::cout << it->first << ":" << it->second.value << "\n";
+        }
+    }
+
+    std::cout << "\n";
+
+    // int N = 100;
+    // int K = location_counter;
     
-    std::cout << K << " ";
-    std::cout << N << " ";
-    std::cout << N+K+1000 << " ";
-    std::cout << N+START << "\n\n";
+    // std::cout << K << " ";
+    // std::cout << N << " ";
+    // std::cout << N+K+1000 << " ";
+    // std::cout << N+START << "\n\n";
 
     for(int i=0; i<(int)this->program_size; i++)
     {

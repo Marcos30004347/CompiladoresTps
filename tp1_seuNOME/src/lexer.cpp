@@ -12,9 +12,7 @@ Lexer::status Lexer::readNextToken()
         this->skipComments() ||
         this->skipSpaces() ||
         this->skipBreakLines()
-    ){
-    }
-
+    ){}
 
     if(this->l_head == EOF)
     {
@@ -27,13 +25,12 @@ Lexer::status Lexer::readNextToken()
         this->l_current_token = Token(Token::TOKEN_TWO_POINTS, ":");
         this->advance();
     }
-    else if(isdigit(this->l_curr_char)) this->collectNumber();
+    else if(this->l_curr_char == '-' || isdigit(this->l_curr_char)) this->collectNumber();
     else if(isalnum(this->l_curr_char)) this->collectToken();
     else
     {
         std::cout << "Syntax Error at character: '" << this->l_curr_char << "' in line " << this->l_line << " at position " << this->l_line_pos << "\n";
-        // this->l_current_token = Token(Token::TOKEN_SYMBOL, ":");
-        // this->advance();
+        exit(1);
     }
 
     return LEXER_SUCCESS;
@@ -115,6 +112,8 @@ Lexer::status Lexer::collectToken()
 
     identifier[0] = '\0';
     int p = 0;
+
+
     while(isalnum(this->l_curr_char) || isdigit(this->l_curr_char))
     {
 
@@ -129,8 +128,7 @@ Lexer::status Lexer::collectToken()
             break;
         }
     }
-    // std::cout << "HAHAHHAAH: " <<  identifier << std::endl;
-    
+
     if(strlen(identifier) == 2 && identifier[0] == 'R' && isdigit(identifier[1]))
     {
         l_current_token = Token(Token::TOKEN_REG, identifier);
@@ -174,6 +172,15 @@ Lexer::status Lexer::collectNumber()
 
     int p = 0;
 
+    if(this->l_curr_char == '-')
+    {
+        identifier = (char*)realloc(identifier, (p + 2)*sizeof(char));
+        identifier[p] = this->l_curr_char;
+        identifier[p+1] = '\0';
+        p++;
+        this->advance();
+    }
+
     while(isdigit(this->l_curr_char))
     {
         identifier = (char*)realloc(identifier, (p + 2)*sizeof(char));
@@ -216,6 +223,7 @@ Lexer::Lexer(const char* filename)
     this->l_src.open(filename, std::ifstream::in);
     this->l_curr_char = l_src.get();
     this->l_src.seekg (0, this->l_src.beg);
+    this->l_src.get(this->l_curr_char);
 }
 
 Lexer::~Lexer()

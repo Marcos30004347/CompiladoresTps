@@ -7,7 +7,7 @@ EXT = cpp
 # TODO: altere a lista de forma que contenha todos os arquivos .cpp
 #       do seu projeto (sem a extensão), que deve estar no diretório 
 #       src/
-SRCS_MONTADOR = $(patsubst %,%.$(EXT),main montador parser lexer token)
+SRCS_MONTADOR = $(patsubst %,%.$(EXT),main ligador montador parser lexer token)
 OBJS_MONTADOR = $(patsubst %,build/%.o,$(basename $(SRCS_MONTADOR)))
 
 ###############################################################################

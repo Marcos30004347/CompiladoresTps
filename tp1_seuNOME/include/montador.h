@@ -6,11 +6,16 @@
 
 #include "parser.h"
 
+struct adrr {
+    int value = -1;
+};
+ 
+
 class Montador
 {
 public:
     // "Symbol -> address"
-    std::map<std::string, int> symbol_table;
+    std::map<std::string, adrr> symbol_table;
     
     // "Instruction -> code, size"
     std::map<std::string, std::tuple<int, int>> op_table;
