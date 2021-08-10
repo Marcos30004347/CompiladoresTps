@@ -26,9 +26,8 @@ public:
     Linker();
     ~Linker();
     void readFile(string filename, int fileIdx);
-    void addLabelToTable(string label, int relativePos, int fileIdx);
-    void addToTranslation(string value);
-    int getNewPosition(int currFile, string label);
+    int getCurrFileIdx(int currPos);
+    int getNewPosition(int currFile, string label, int pos);
     void run();
 
     //debug

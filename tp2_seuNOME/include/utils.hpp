@@ -4,6 +4,9 @@
 #define error(msg) { cout << "error: " << msg << endl; exit(EXIT_FAILURE); }
 #define rep(i, a, b) for(int i = int(a); i < int(b); i++)
 #define debugA(x, l) { rep(i,0,l) { cout << x[i] << " "; } printf("\n"); }
+#define debug(x) cout << #x << " = " << x << endl;
+
+#define MAIN "main"
 
 #include <bits/stdc++.h>
 
