@@ -89,11 +89,6 @@ void Linker::printTranslation() {
 }
 
 void Linker::run() {
-
-    // cout << "start file one: " << this->files[1]->start << endl;
-    // this->printTable();
-    // this->printTranslation();
-
     int N = 100;
     int K = this->translation.size();
     int START = this->files[labelTable["main"].second]->start + labelTable["main"].first; 
