@@ -32,6 +32,7 @@ public:
 
     //debug
     void printTable();
+    void printTranslation();
 };
 
 

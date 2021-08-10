@@ -72,25 +72,37 @@ int Linker::getCurrFileIdx(int currPos) {
     return -1;
 }
 
-
-
 void Linker::printTable() {
     for (string i : this->translation) {
         cout << i << ": " << this->labelTable[i].first << " | " << this->labelTable[i].second << endl;
     }
 }
 
-void Linker::run() {
-    
-    
-    // Achar o main e a posição de início do programa
-    //cout << this->labelTable["main"].first << this->labelTable["main"].second << endl;
+void Linker::printTranslation() {
+    for (File *file : this->files) {
+        for (int i = file->start; i<=file->end; i++) {
+            cout << this->translation[i] << " ";
+        }
+        cout << " | ";
+    }
+    cout << endl;
+}
 
-    // Printar o header
-    
-    cout << "start file one: " << this->files[1]->start << endl;
-    this->printTable();
-    debugA(this->translation, this->translation.size());
+void Linker::run() {
+
+    // cout << "start file one: " << this->files[1]->start << endl;
+    // this->printTable();
+    // this->printTranslation();
+
+    int N = 100;
+    int K = this->translation.size();
+    int START = this->files[labelTable["main"].second]->start + labelTable["main"].first; 
+
+    cout << "MV-EXE" << endl;
+    cout << K << " ";
+    cout << N << " ";
+    cout << N+K+1000 << " ";
+    cout << N+START << "\n\n";
 
     for (long unsigned int i=0; i<this->translation.size(); i++) {
         string str = this->translation[i];
