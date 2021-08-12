@@ -53,12 +53,13 @@ int Linker::getNewPosition(int currFile, string label, int pc) {
     
     int absPos = fileStart + relPos;
 
-    int pos = absPos - pc;
-    if (pos < 0) {
-        pos++;
-    } else {
-        pos--;
-    }
+    int pos = absPos - pc - 1;
+    // if (pos < 0) {
+    //     pos++;
+    // } 
+    // else {
+    //     pos--;
+    // }
 
     return pos;
 }
