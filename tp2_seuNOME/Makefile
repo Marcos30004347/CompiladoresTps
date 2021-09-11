@@ -7,8 +7,11 @@ EXT = cpp
 # TODO: altere a lista de forma que contenha todos os arquivos .cpp
 #       do seu projeto (sem a extensão), que deve estar no diretório 
 #       src/
+SRCS_MONTADOR = $(patsubst %,%.$(EXT),main montador parser lexer token)
+OBJS_MONTADOR = $(patsubst %,build/montador/%.o,$(basename $(SRCS_MONTADOR)))
+
 SRCS_LIGADOR = $(patsubst %,%.$(EXT),main ligador)
-OBJS_LIGADOR = $(patsubst %,build/%.o,$(basename $(SRCS_LIGADOR)))
+OBJS_LIGADOR = $(patsubst %,build/ligador/%.o,$(basename $(SRCS_LIGADOR)))
 
 ###############################################################################
 ########################### Parametros de Ambiente ############################
@@ -18,13 +21,14 @@ CC = gcc
 CXX = g++
 CCFLAGS = -Wall
 CXXFLAGS = -Wall -g
-CPPFLAGS = -Iinclude/
+CPPFLAGS_M = -Iinclude/montador
+CPPFLAGS_L = -Iinclude/ligador
 
 ###############################################################################
 ################################ Executáveis ##################################
 ###############################################################################
 
-all: bin/ligador
+all: bin/ligador bin/montador
 
 ifeq ($(EXT), c)
 bin/ligador: $(OBJS_LIGADOR)
@@ -36,18 +40,38 @@ bin/ligador: $(OBJS_LIGADOR)
 	@$(CXX) $(CXXFLAGS) $(OBJS_LIGADOR) -o bin/ligador
 endif
 
+ifeq ($(EXT), c)
+bin/montador: $(OBJS_MONTADOR)
+	@echo "+ Compilando programa \"$@\""
+	@$(CC) $(CCFLAGS) $(OBJS_MONTADOR) -o bin/montador
+else
+bin/montador: $(OBJS_MONTADOR)
+	@echo "+ Compilando programa \"$@\""
+	@$(CXX) $(CXXFLAGS) $(OBJS_MONTADOR) -o bin/montador
+endif
+
 ###############################################################################
 ################################## Objetos ####################################
 ###############################################################################
 
 ifeq ($(EXT), c)
-build/%.o: src/%.c
+build/montador/%.o: src/montador/%.c
 	@echo "- Compilando objeto \"$@\""
-	@$(CC) $(CPPFLAGS) $(CCFLAGS) -c $< -o $@
+	@$(CC) $(CPPFLAGS_M) $(CCFLAGS) -c $< -o $@
 else
-build/%.o: src/%.cpp
+build/montador/%.o: src/montador/%.cpp
 	@echo "- Compilando objeto \"$@\""
-	@$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
+	@$(CXX) $(CPPFLAGS_M) $(CXXFLAGS) -c $< -o $@
+endif
+
+ifeq ($(EXT), c)
+build/ligador/%.o: src/ligador/%.c
+	@echo "- Compilando objeto \"$@\""
+	@$(CC) $(CPPFLAGS_L) $(CCFLAGS) -c $< -o $@
+else
+build/ligador/%.o: src/ligador/%.cpp
+	@echo "- Compilando objeto \"$@\""
+	@$(CXX) $(CPPFLAGS_L) $(CXXFLAGS) -c $< -o $@
 endif
 
 ###############################################################################
@@ -56,3 +80,4 @@ endif
 
 clean:
 	rm -f bin/* $(OBJS_LIGADOR)
+	rm -f bin/* $(OBJS_MONTADOR)
