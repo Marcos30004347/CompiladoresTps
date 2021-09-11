@@ -1024,56 +1024,72 @@ std::map<Symbol, attr_class*> get_class_attribute_defs(Class_ class_definition) 
 void CgenClassTable::attach_inherited_definitions_to(Class_ class_definition, Class_ parent_definition) {
   class_definitions[class_definition->get_name()] = class_definition;
 
-  auto inherited_methods = class_methods[parent_definition->get_name()];
-  auto inherited_method_defs = class_method_defs[parent_definition->get_name()];
-  auto inherited_attrs = class_attributes[parent_definition->get_name()];
-  auto inherited_attr_defs = class_attribute_defs[parent_definition->get_name()];
+  std::vector<Symbol> inherited_methods = class_methods[parent_definition->get_name()];
+  std::map<Symbol, method_class *> inherited_method_defs = class_method_defs[parent_definition->get_name()];
+  std::vector<Symbol> inherited_attrs = class_attributes[parent_definition->get_name()];
+  std::map<Symbol, attr_class *> inherited_attr_defs = class_attribute_defs[parent_definition->get_name()];
   inheritance_parent[class_definition->get_name()] = parent_definition->get_name();
 
-  for (auto const &x : inherited_methods) {
+  for (Symbol const &x : inherited_methods) 
+  {
     class_methods[class_definition->get_name()].push_back(x);
     class_method_defined_in[class_definition->get_name()][x] = class_method_defined_in[parent_definition->get_name()][x];
   }
-  for (auto const &x : inherited_method_defs) {
+
+  for (std::pair<const Symbol, method_class *> const &x : inherited_method_defs) 
+  {
     class_method_defs[class_definition->get_name()][x.first] = x.second;
   }
-  for (auto const &x : inherited_attrs) {
+
+  for (Symbol const &x : inherited_attrs) 
+  {
     class_attributes[class_definition->get_name()].push_back(x);
   }
-  for (auto const &x : inherited_attr_defs) {
+
+  for (std::pair<const Symbol, attr_class *> const &x : inherited_attr_defs) 
+  {
     class_attribute_defs[class_definition->get_name()][x.first] = x.second;
   }
 }
 
 void CgenClassTable::register_properties_and_definitions_of(Class_ class_definition) {
-  auto method_names = get_class_methods(class_definition);
-  auto attr_names = get_class_attributes(class_definition);
-  auto method_defs = get_class_method_defs(class_definition);
-  auto attr_defs = get_class_attribute_defs(class_definition);
+  std::vector<Symbol> method_names = get_class_methods(class_definition);
+  std::vector<Symbol> attr_names  = get_class_attributes(class_definition);
+  std::map<Symbol, method_class *> method_defs = get_class_method_defs(class_definition);
+  std::map<Symbol, attr_class *> attr_defs = get_class_attribute_defs(class_definition);
 
-  for (auto const &method_name : method_names) {
+  for (Symbol const &method_name : method_names) 
+  {
     class_methods[class_definition->get_name()].push_back(method_name);
     class_method_defined_in[class_definition->get_name()][method_name] = class_definition->get_name();
   }
-  for (auto const &attr_name : attr_names) {
+
+  for (Symbol const &attr_name : attr_names) 
+  {
     class_attributes[class_definition->get_name()].push_back(attr_name);
     class_directly_owned_attributes[class_definition->get_name()].insert(attr_name);
   }
-  for (auto const &attr_def : attr_defs) {
+
+  for (std::pair<Symbol, attr_class *> const &attr_def : attr_defs) 
+  {
     class_attribute_defs[class_definition->get_name()][attr_def.first] = attr_def.second;
   }
-  for (auto const &method_def : method_defs) {
+
+  for (std::pair<const Symbol, method_class *> const &method_def : method_defs) 
+  {
     class_method_defs[class_definition->get_name()][method_def.first] = method_def.second;
   }
 }
 
 
-void CgenClassTable::traverse_inheritance_tree() {
+void CgenClassTable::traverse_inheritance_tree()
+{
   std::queue<CgenNodeP> q;
   q.push(root());
   classtag_of[Object] = get_classtag_for(Object);
 
-  while(!q.empty()) {
+  while(!q.empty()) 
+  {
     CgenNodeP class_graph_node = q.front();
     q.pop();
 
@@ -1082,7 +1098,7 @@ void CgenClassTable::traverse_inheritance_tree() {
 
     if(class_graph_node->get_parentnd())
     {
-      auto parent_class_definition = (
+      Class_ parent_class_definition = (
         class_graph_node
           ->get_parentnd()
           ->get_class_definition()
@@ -1092,11 +1108,12 @@ void CgenClassTable::traverse_inheritance_tree() {
 
     register_properties_and_definitions_of(class_definition);
 
-    auto *class_child_node = class_graph_node->get_children();
-    while (class_child_node) {
-      auto subclass_node = class_child_node->hd();
-      auto subclass = subclass_node->get_class_definition();
-      auto subclass_name = subclass->get_name();
+    List<CgenNode> *class_child_node = class_graph_node->get_children();
+    while (class_child_node) 
+    {
+      CgenNode * subclass_node = class_child_node->hd();
+      Class_ subclass = subclass_node->get_class_definition();
+      Symbol subclass_name = subclass->get_name();
       classtag_of[subclass_name] = get_classtag_for(subclass_name);
       q.push(subclass_node);
       class_child_node = class_child_node->tl();
@@ -1113,13 +1130,16 @@ void CgenClassTable::traverse_inheritance_tree() {
 //
 ///////////////////////////////////////////////////////////////////////
 
-void CgenClassTable::construct_protObjs() {
-    for (auto *class_node = this->nds; class_node; class_node = class_node->tl()) {
-      auto class_definition = class_node->hd()->get_class_definition();
-      auto class_name = class_definition->get_name();
+void CgenClassTable::construct_protObjs() 
+{
+    for (List<CgenNode> *class_node = this->nds; class_node; class_node = class_node->tl()) 
+    {
+      Class_ class_definition = class_node->hd()->get_class_definition();
+      Symbol class_name = class_definition->get_name();
       cgen_class_definition_of[class_name] = construct_cgen_class_definition(class_definition);
 
-      for (auto const &x : cgen_class_definition_of[class_name].method_offset) {
+      for (std::pair<const Symbol, int> const &x : cgen_class_definition_of[class_name].method_offset)
+      {
         Symbol method_name = x.first;
         int method_offset = x.second;
         dispatch_offsets_of_class_methods[class_name][method_name] = method_offset;
@@ -1128,18 +1148,20 @@ void CgenClassTable::construct_protObjs() {
       cgen_class_names.push_back(class_name);
     }
 
-    std::sort(
-      std::begin(cgen_class_names), 
-      std::end(cgen_class_names), 
-      [&](auto const &l, auto const &r) {
+    std::sort(std::begin(cgen_class_names), std::end(cgen_class_names), 
+      [&](Symbol const &l, Symbol const &r) 
+      {
         return cgen_class_definition_of[l].tag < cgen_class_definition_of[r].tag;
       }
     );
 }
 
-int CgenClassTable::next_classtag() { return current_classtag++; }
+int CgenClassTable::next_classtag() {
+  return current_classtag++;
+}
 
-int CgenClassTable::get_classtag_for(Symbol type) {
+int CgenClassTable::get_classtag_for(Symbol type) 
+{
   if (type == Object)
     return objectclasstag;
   else if (type == Bool)
@@ -1178,9 +1200,9 @@ cgen_class_definition CgenClassTable::construct_cgen_class_definition(Class_ cla
   cgen_definition.attr_definitions = this->class_attribute_defs[class_name];
 
   int attr_offset = DEFAULT_OBJFIELDS, method_offset = 0;
-  for (auto const &attr : cgen_definition.attrs)
+  for (Symbol const &attr : cgen_definition.attrs)
       cgen_definition.attr_offset[attr] = attr_offset++;
-  for (auto const &method : cgen_definition.dispatch_table)
+  for (Symbol const &method : cgen_definition.dispatch_table)
       cgen_definition.method_offset[method] = method_offset++;
 
   cgen_definition.method_definition_containing_class = class_method_defined_in[cgen_definition.name];
@@ -1197,24 +1219,28 @@ cgen_class_definition CgenClassTable::construct_cgen_class_definition(Class_ cla
 ///////////////////////////////////////////////////////////////////////
 
 
-void CgenClassTable::emit_nameTab() {
+void CgenClassTable::emit_nameTab()
+{
   str << CLASSNAMETAB << ":" << endl;
-  for (auto const &cgen_definition : cgen_class_names) {
+  for (Symbol const &cgen_definition : cgen_class_names) 
+  {
     str << WORD;
     stringtable.lookup_string(cgen_definition->get_string())->code_ref(str);
     str << endl;
   }
 }
 
-void CgenClassTable::emit_objTab() {
+void CgenClassTable::emit_objTab() 
+{
   str << CLASSOBJTAB << ":" << endl;
-  for (auto const &cgen_definition_name : cgen_class_names) {
+  for (Symbol const &cgen_definition_name : cgen_class_names) {
     str << WORD << cgen_definition_name << PROTOBJ_SUFFIX << endl;
     str << WORD << cgen_definition_name << "_init" << endl;
   }
 }
 
-void CgenClassTable::emit_default_value_for_attr_type(Symbol type) {
+void CgenClassTable::emit_default_value_for_attr_type(Symbol type) 
+{
   if (type == Int)
     inttable.lookup_string("0")->code_ref(str);
   else if (type == Bool)
@@ -1225,44 +1251,51 @@ void CgenClassTable::emit_default_value_for_attr_type(Symbol type) {
     str << "0";
 }
 
-void CgenClassTable::emit_protObj_from(cgen_class_definition cgen_definition) {
+void CgenClassTable::emit_protObj_from(cgen_class_definition cgen_definition)
+{
   str << WORD << -1 << endl;
   str << cgen_definition.name << PROTOBJ_SUFFIX << ":" << endl;
   str << WORD << cgen_definition.tag << endl;
   str << WORD << cgen_definition.size() << endl;
   str << WORD << cgen_definition.name << DISPTAB_SUFFIX << endl;
 
-  for (auto const &attr : cgen_definition.attrs) {       
+  for (Symbol const &attr : cgen_definition.attrs)
+  {       
     str << WORD;
     emit_default_value_for_attr_type(cgen_definition.attr_definitions[attr]->get_type());
     str << endl;
   }
 }
 
-void CgenClassTable::emit_protObjs() {
-  for (auto const &cgen_definition : cgen_class_names)
+void CgenClassTable::emit_protObjs()
+{
+  for (Symbol const &cgen_definition : cgen_class_names)
     emit_protObj_from(cgen_class_definition_of[cgen_definition]);
 }
 
-void CgenClassTable::emit_dispatch_table(cgen_class_definition cgen_definition) {
+void CgenClassTable::emit_dispatch_table(cgen_class_definition cgen_definition)
+{
   str << cgen_definition.name << DISPTAB_SUFFIX << ":" << endl;
-  for (auto const &method : cgen_definition.dispatch_table)
+  for (Symbol const &method : cgen_definition.dispatch_table)
     str << WORD << cgen_definition.method_definition_containing_class[method] << "." << method << endl;
 }
 
-void CgenClassTable::emit_dispatch_tables() {
-  for (auto const &cgen_definition : cgen_class_names)
+void CgenClassTable::emit_dispatch_tables()
+{
+  for (Symbol const &cgen_definition : cgen_class_names)
     emit_dispatch_table(cgen_class_definition_of[cgen_definition]);
 }
 
-void CgenClassTable::emit_initialiser(cgen_class_definition cgen_definition) {
+void CgenClassTable::emit_initialiser(cgen_class_definition cgen_definition)
+{
   str << cgen_definition.name << CLASSINIT_SUFFIX << LABEL;
 
   emit_spill_activation_record_registers(str);
   emit_setup_frame_pointer(str);
   emit_setup_self_pointer(str);
 
-  if (cgen_definition.name != Object) {
+  if (cgen_definition.name != Object) 
+  {
     emit_jal_without_address(str);
     str << inheritance_parent[cgen_definition.name] << CLASSINIT_SUFFIX << endl;
   }
@@ -1274,10 +1307,12 @@ void CgenClassTable::emit_initialiser(cgen_class_definition cgen_definition) {
   context.dispatch_offsets_of_class_methods = dispatch_offsets_of_class_methods;
   context.classtag_of = classtag_of;
 
-  for (auto const& attr_name : cgen_definition.attrs) {
+  for (Symbol const& attr_name : cgen_definition.attrs)
+  {
     Expression attr_init_expr = cgen_definition.attr_definitions[attr_name]->get_init_expr();
     bool has_init_expr = dynamic_cast<no_expr_class*>(attr_init_expr) == nullptr;
-    if (has_init_expr && cgen_definition.is_directly_owned(attr_name)) {
+    if (has_init_expr && cgen_definition.is_directly_owned(attr_name))
+    {
       attr_init_expr->code(str, context);
       emit_store(ACC, cgen_definition.attr_offset[attr_name], SELF, str);
     }
@@ -1288,15 +1323,17 @@ void CgenClassTable::emit_initialiser(cgen_class_definition cgen_definition) {
   emit_return(str);
 }
 
-void CgenClassTable::emit_initialisers() {
-  for (auto const &cgen_definition : cgen_class_names)
+void CgenClassTable::emit_initialisers() 
+{
+  for (Symbol const &cgen_definition : cgen_class_names)
     emit_initialiser(cgen_class_definition_of[cgen_definition]);
 }
 
 void CgenClassTable::emit_parentTab() {
   str << CLASSPARENTTAB << LABEL;
-  for (auto const &type : cgen_class_names) {
-    if (type == Object) {
+  for (Symbol const &type : cgen_class_names) {
+    if (type == Object) 
+    {
       str << WORD << objectparenttag << endl;
     }
     else
@@ -1323,6 +1360,7 @@ std::map<Symbol, int> build_method_args_lookup(method_class* method_definition) 
     declared_method_args = method_definition->get_formals();
     declared_argument_ix = declared_method_args->first();
     argument_offset--;
+  
     while (declared_method_args->more(declared_argument_ix))
     {
         Formal declared_argument = declared_method_args->nth(declared_argument_ix);
@@ -1331,12 +1369,14 @@ std::map<Symbol, int> build_method_args_lookup(method_class* method_definition) 
         argument_offset--;
         declared_argument_ix = declared_method_args->next(declared_argument_ix);
     }
+  
     return arg_offset_map;
 }
 
 void CgenClassTable::emit_method(cgen_class_definition cgen_definition, method_class* method_definition) {
   cgen_context ctx;
-	ctx.self_name = cgen_definition.name;
+
+  ctx.self_name = cgen_definition.name;
   ctx.class_attr_offset = cgen_definition.attr_offset;
   ctx.method_attr_offset = build_method_args_lookup(method_definition);
   ctx.self_class_definition = class_definitions[cgen_definition.name];
@@ -1361,14 +1401,16 @@ void CgenClassTable::emit_method(cgen_class_definition cgen_definition, method_c
   emit_return(str);  
 }
 
-void CgenClassTable::emit_methods(cgen_class_definition cgen_definition) {
-  for (auto const& x: cgen_definition.method_definitions)
+void CgenClassTable::emit_methods(cgen_class_definition cgen_definition)
+{
+  for (std::pair<const Symbol, method_class *> const& x: cgen_definition.method_definitions)
     if (cgen_definition.is_defining_method(x.first))
       emit_method(cgen_definition, x.second);
 }
 
-void CgenClassTable::emit_class_methods() {
-  for (auto const &cgen_definition : cgen_class_names)
+void CgenClassTable::emit_class_methods() 
+{
+  for (Symbol const &cgen_definition : cgen_class_names)
     if(!cgen_class_definition_of[cgen_definition].is_primitive_type)
       emit_methods(cgen_class_definition_of[cgen_definition]);
 }
@@ -1387,11 +1429,13 @@ void CgenClassTable::emit_class_methods() {
 //*****************************************************************
 int current_label_ix = 0;
 
-int next_label() {
+int next_label() 
+{
   return current_label_ix++;
 }
 
-void assign_class::code(ostream &s, cgen_context ctx) {
+void assign_class::code(ostream &s, cgen_context ctx)
+{
   expr->code(s, ctx); // acc value
 
   int scope_stack_offset = ctx.get_scope_identifier_offset(name);
@@ -1402,25 +1446,31 @@ void assign_class::code(ostream &s, cgen_context ctx) {
   bool is_method_argument = method_arg_offset != -1;
   bool is_class_attr = class_attr_offset != -1;
 
-  if (is_in_scope) {
+  if (is_in_scope) 
+  {
     emit_store(ACC, scope_stack_offset + 1, SP, s);
-    if (cgen_Memmgr == GC_GENGC) {
+    if (cgen_Memmgr == GC_GENGC) 
+    {
       emit_addiu(A1, SP, 4 * (scope_stack_offset + 1), s);
       emit_gc_assign(s);
     }
     return;
   }
-  if (is_method_argument) {
+  if (is_method_argument) 
+  {
     emit_store(ACC, 3 + method_arg_offset, FP, s);
-    if (cgen_Memmgr == GC_GENGC) {
+    if (cgen_Memmgr == GC_GENGC) 
+    {
       emit_addiu(A1, FP, 4 * (3 + method_arg_offset), s);
       emit_gc_assign(s);
     }
     return;
   }
-  if (is_class_attr) {
+  if (is_class_attr) 
+  {
     emit_store(ACC, class_attr_offset, SELF, s);
-    if (cgen_Memmgr == GC_GENGC) {
+    if (cgen_Memmgr == GC_GENGC) 
+    {
       emit_addiu(A1, SELF, 4 * (class_attr_offset), s);
       emit_gc_assign(s);
     }
@@ -1428,12 +1478,15 @@ void assign_class::code(ostream &s, cgen_context ctx) {
   }
 }
 
-void static_dispatch_class::code(ostream &s, cgen_context ctx) {
+void static_dispatch_class::code(ostream &s, cgen_context ctx)
+{
   Expressions actual_method_args = actual;
   Symbol dispatch_target_type = type_name;
+
   int actual_argument_ix = actual_method_args->first();
   int dispatch_start_label = next_label();
   int dispatch_offset = ctx.get_class_method_dispatch_offset(dispatch_target_type, name);
+
   Class_ class_definition = ctx.self_class_definition;
 
   while (actual_method_args->more(actual_argument_ix))
@@ -1463,12 +1516,15 @@ void static_dispatch_class::code(ostream &s, cgen_context ctx) {
 }
 
 
-void dispatch_class::code(ostream &s, cgen_context ctx) {
+void dispatch_class::code(ostream &s, cgen_context ctx)
+{
   Expressions actual_method_args = actual;
   Symbol dispatch_target_type = expr->get_type() == SELF_TYPE ? ctx.self_name : expr->get_type();
+  
   int actual_argument_ix = actual_method_args->first();
   int dispatch_start_label = next_label();
   int dispatch_offset = ctx.get_class_method_dispatch_offset(dispatch_target_type, name);
+  
   Class_ class_definition = ctx.self_class_definition;
 
   while (actual_method_args->more(actual_argument_ix))
@@ -1484,12 +1540,14 @@ void dispatch_class::code(ostream &s, cgen_context ctx) {
 
   //  Ensure dispatch to existing object
   emit_bne(ACC, ZERO, dispatch_start_label, s);
+  
   //  Dispatch to void
   emit_partial_load_address(ACC, s);
   stringtable.lookup_string(class_definition->get_filename()->get_string())->code_ref(s);
   s << endl;
   emit_load_imm(T1, get_line_number(), s);
   emit_jal("_dispatch_abort", s);
+  
   // Dispatch to valid object
   emit_label_def(dispatch_start_label, s);
   emit_load(T1, 2, ACC, s); // $t1 holds pointer to disptab
@@ -1497,7 +1555,8 @@ void dispatch_class::code(ostream &s, cgen_context ctx) {
   emit_jalr(T1, s);
 }
 
-void cond_class::code(ostream &s, cgen_context ctx) {
+void cond_class::code(ostream &s, cgen_context ctx) 
+{
   int predicate_fails = next_label();
   int done_label = next_label();
 
@@ -1514,7 +1573,8 @@ void cond_class::code(ostream &s, cgen_context ctx) {
   emit_label_def(done_label, s);
 }
 
-void loop_class::code(ostream &s, cgen_context ctx) {
+void loop_class::code(ostream &s, cgen_context ctx) 
+{
   int loop_begin_label = next_label();
   int loop_exit_label = next_label();
 
@@ -1532,7 +1592,8 @@ void loop_class::code(ostream &s, cgen_context ctx) {
   emit_move(ACC, ZERO, s);
 }
 
-void typcase_class::code(ostream &s, cgen_context ctx) {
+void typcase_class::code(ostream &s, cgen_context ctx)
+{
   Class_ class_definition = ctx.self_class_definition;
   int typcase_exp_save_to_check = next_label();
   int typcase_match_failure_label = next_label();
@@ -1546,7 +1607,8 @@ void typcase_class::code(ostream &s, cgen_context ctx) {
   std::vector<Symbol> branch_types;
 
   // analyse classes and tags
-  for (int i = cases->first(); cases->more(i); i = cases->next(i)) {
+  for (int i = cases->first(); cases->more(i); i = cases->next(i)) 
+  {
     branch_class* branch = static_cast<branch_class*>(cases->nth(i));
     Symbol branch_static_type = branch->get_declaration_type();
     branches[branch_static_type] = branch;
@@ -1558,7 +1620,8 @@ void typcase_class::code(ostream &s, cgen_context ctx) {
   std::sort(
     std::begin(branch_types), 
     std::end(branch_types), 
-    [&](auto const &l, auto const &r) {
+    [&](Symbol const &l, Symbol const &r) 
+    {
       return branches_classtype_tags[l] > branches_classtype_tags[r];
     }
   );
@@ -1591,7 +1654,9 @@ void typcase_class::code(ostream &s, cgen_context ctx) {
   emit_bne(T4, T6, ancestors_cases_start, s);
   emit_jump_to_label(typcase_match_failure_label, s);
   emit_label_def(ancestors_cases_start, s);
-  for (auto const &branch_type : branch_types) {
+
+  for (Symbol const &branch_type : branch_types)
+  {
     int branch_matched_label = branches_match_labels[branch_type];
     int branch_classtag = branches_classtype_tags[branch_type];
     emit_load_imm(T2, branch_classtag, s); // $t2 -> branch_classtag
@@ -1607,7 +1672,7 @@ void typcase_class::code(ostream &s, cgen_context ctx) {
   emit_jump_to_label(ancestors_loop_start, s);
   emit_jump_to_label(typcase_match_failure_label, s);
 
-  for (auto const &branch_type : branch_types) {
+  for (Symbol const &branch_type : branch_types) {
     int branch_matched_label = branches_match_labels[branch_type];
     int branch_classtag = branches_classtype_tags[branch_type];
     branch_class* branch = branches[branch_type];
@@ -1711,12 +1776,18 @@ void mul_class::code(ostream &s, cgen_context ctx) {
 
 void divide_class::code(ostream &s, cgen_context ctx) {
   this->e1->code(s, ctx);
+  
   emit_push(ACC, s);
+  
   ctx.push_scope_identifier(No_type);
+  
   this->e2->code(s, ctx);
+  
   emit_jal("Object.copy", s);
   emit_pop(T1, s);
+  
   ctx.pop_scope_identifier();
+  
   emit_fetch_int(T1, T1, s);
   emit_fetch_int(T2, ACC, s);
   emit_div(T3, T1, T2, s);
@@ -1725,6 +1796,7 @@ void divide_class::code(ostream &s, cgen_context ctx) {
 
 void neg_class::code(ostream &s, cgen_context ctx) {
   e1->code(s, ctx);
+  
   emit_jal("Object.copy", s);
   emit_fetch_int(T1, ACC, s);
   emit_neg(T1, T1, s);
@@ -1736,11 +1808,15 @@ void lt_class::code(ostream &s, cgen_context ctx) {
   int done_label = next_label();
 
   e1->code(s, ctx);
+  
   emit_push(ACC, s);
+  
   ctx.push_scope_identifier(No_type);
 
   e2->code(s, ctx);
+  
   emit_pop(T1, s);           // $t1 = e1_int
+  
   ctx.pop_scope_identifier();
 
   emit_move(T2, ACC, s);     // $t2 = e2_int
@@ -1762,10 +1838,10 @@ void eq_class::code(ostream &s, cgen_context ctx) {
   ctx.push_scope_identifier(No_type);
 
   e2->code(s, ctx);
-  emit_pop(T1, s);       // $t1 = e1_object
+  emit_pop(T1, s); 
   ctx.pop_scope_identifier();
 
-  emit_move(T2, ACC, s); // $t2 = e2_object
+  emit_move(T2, ACC, s);
 
   if (e1->type == Int || e1->type == Str || e1->type == Bool) {
       emit_load_bool(ACC, BoolConst(1), s);
@@ -1777,10 +1853,8 @@ void eq_class::code(ostream &s, cgen_context ctx) {
   emit_beq(T1, T2, are_reference_equal, s);
   emit_load_bool(ACC, BoolConst(0), s);
   emit_jump_to_label(done_label, s);
-  //
   emit_label_def(are_reference_equal, s);
   emit_load_bool(ACC, BoolConst(1), s);
-  //
   emit_label_def(done_label, s);
 }
 
@@ -1792,11 +1866,11 @@ void leq_class::code(ostream &s, cgen_context ctx) {
   emit_push(ACC, s);
   ctx.push_scope_identifier(No_type);
   e2->code(s, ctx);
-  emit_pop(T1, s);      // $t1 = e1_int
+  emit_pop(T1, s);
   ctx.pop_scope_identifier();
-  emit_move(T2, ACC, s); // $t2 = e2_int
-  emit_fetch_int(T1, T1, s); // $t1 = e1_int.val
-  emit_fetch_int(T2, T2, s); // $t2 = e2_int.val
+  emit_move(T2, ACC, s);
+  emit_fetch_int(T1, T1, s);
+  emit_fetch_int(T2, T2, s);
   emit_bleq(T1, T2, less_or_equal_label, s);
   emit_load_bool(ACC, BoolConst(0), s);
   emit_jump_to_label(done_label, s);
@@ -1808,7 +1882,9 @@ void leq_class::code(ostream &s, cgen_context ctx) {
 void comp_class::code(ostream &s, cgen_context ctx) {
   int is_false = next_label();
   int done_label = next_label();
+
   e1->code(s, ctx);
+
   emit_fetch_int(T1, ACC, s);
   emit_beq(T1, ZERO, is_false, s);
   emit_load_bool(ACC, BoolConst(0), s);
@@ -1835,25 +1911,29 @@ void bool_const_class::code(ostream& s, cgen_context ctx)
 
 void new__class::code(ostream &s, cgen_context ctx) {
   Symbol static_type = this->get_type();
-  if (type_name != SELF_TYPE) {
+  
+  if (type_name != SELF_TYPE)
+  {
     std::string target_cgen_definition = std::string(static_type->get_string()) + PROTOBJ_SUFFIX;
     std::string target_cgen_definition_init = std::string(static_type->get_string()) + CLASSINIT_SUFFIX;
     emit_load_address(ACC, (char *) target_cgen_definition.c_str(), s);
     emit_jal("Object.copy", s);
     emit_jal((char *)target_cgen_definition_init.c_str(), s);
-    return;
+  } 
+  else 
+  {
+    emit_load_address(T1, CLASSOBJTAB, s);
+    emit_load(T2, TAG_OFFSET, SELF, s);
+    emit_load_imm(T3, 8, s);
+    emit_mul(T2, T2, T3, s);
+    emit_addu(T1, T1, T2, s);
+    emit_push(T1, s);
+    emit_load(ACC, 0, T1, s);
+    emit_jal("Object.copy", s);
+    emit_pop(T1, s);
+    emit_load(T1, 1, T1, s);
+    emit_jalr(T1, s);
   }
-  emit_load_address(T1, CLASSOBJTAB, s);
-  emit_load(T2, TAG_OFFSET, SELF, s);
-  emit_load_imm(T3, 8, s);
-  emit_mul(T2, T2, T3, s);
-  emit_addu(T1, T1, T2, s);
-  emit_push(T1, s);
-  emit_load(ACC, 0, T1, s);
-  emit_jal("Object.copy", s);
-  emit_pop(T1, s);
-  emit_load(T1, 1, T1, s);
-  emit_jalr(T1, s);
 }
 
 void isvoid_class::code(ostream &s, cgen_context ctx) {

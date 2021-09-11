@@ -130,11 +130,10 @@ public:
 
 class CgenNode : public class__class {
 private: 
+   Class_ c;
    CgenNodeP parentnd;                        // Parent of class
    List<CgenNode> *children;                  // Children of class
    Basicness basic_status;                    // `Basic' if class is basic
-                                              // `NotBasic' otherwise
-   Class_ c;
 
 public:
    CgenNode(Class_ c,
