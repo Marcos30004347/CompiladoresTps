@@ -1,0 +1,50 @@
+LOAD R0 n
+LOAD R1 const1
+main.read.loop: SUB R0 R1
+JN main.read.exit
+READ R2
+PUSH R2
+JUMP main.read.loop
+main.read.exit: LOAD R0 n
+LOAD R2 const0      
+STORE R2 max_all    ; máximo já calculado
+STORE R2 max_curr   ; máximo do subarray atual
+main.max.loop: SUB R0 R1
+JN main.max.exit
+LOAD R2 max_curr
+POP R3
+ADD R2 R3
+LOAD R3 const0
+PUSH R0             ; salvar R0
+PUSH R1             ; salvar R1
+PUSH R2
+PUSH R3
+CALL max            ; max(max_curr, 0)
+STORE R0 max_curr
+LOAD R2 max_all
+PUSH R0
+PUSH R2
+CALL max            ; max(max_curr, max_all)
+STORE R0 max_all
+POP R1              ; recuperar R1
+POP R0              ; recuperar R0
+JUMP main.max.loop
+main.max.exit: LOAD R0 max_all
+WRITE R0
+HALT
+max: POP R2
+POP R1
+POP R0
+PUSH R2
+COPY R2 R0
+SUB R2 R1
+JN max.lt
+max.exit: RET
+max.lt: COPY R0 R1
+JUMP max.exit
+const0: WORD 0
+const1: WORD 1
+n: WORD 5
+max_all: WORD -1
+max_curr: WORD -1
+END

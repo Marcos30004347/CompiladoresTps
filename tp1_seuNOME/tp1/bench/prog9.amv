@@ -1,0 +1,15 @@
+READ R0         ; R0 = b
+READ R1         ; R1 = e, vamos computar p = b^e
+LOAD R2 const1
+COPY R3 R0
+COPY R1 R1
+JZ exp0
+loop: SUB R1 R2
+JZ exit
+MUL R0 R3
+JUMP loop
+exp0: COPY R0 R2
+exit: WRITE R0
+HALT
+const1: WORD 1
+END

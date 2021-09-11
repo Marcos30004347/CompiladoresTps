@@ -1,0 +1,17 @@
+maxsum: POP R0
+STORE R0 maxsum.retaddr
+LOAD R0 n
+LOAD R2 const0
+maxsum.loop: SUB R0 R1
+JN maxsum.exit
+POP R3
+COPY R3 R3
+JN maxsum.latch
+ADD R2 R3
+maxsum.latch: JUMP maxsum.loop
+maxsum.exit: COPY R0 R2
+LOAD R1 maxsum.retaddr
+PUSH R1
+RET
+maxsum.retaddr: WORD 9999
+END

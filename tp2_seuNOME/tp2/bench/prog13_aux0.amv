@@ -1,0 +1,42 @@
+maxsum: POP R0
+STORE R0 maxsum.retaddr
+LOAD R0 n
+LOAD R2 const0      
+STORE R2 max_all    ; máximo já calculado
+STORE R2 max_curr   ; máximo do subarray atual
+maxsum.loop: SUB R0 R1
+JN maxsum.exit
+LOAD R2 max_curr
+POP R3
+ADD R2 R3
+LOAD R3 const0
+PUSH R0             ; salvar R0
+PUSH R1             ; salvar R1
+PUSH R2
+PUSH R3
+CALL max            ; max(max_curr, 0)
+STORE R0 max_curr
+LOAD R2 max_all
+PUSH R0
+PUSH R2
+CALL max            ; max(max_curr, max_all)
+STORE R0 max_all
+POP R1              ; recuperar R1
+POP R0              ; recuperar R0
+JUMP maxsum.loop
+maxsum.exit: LOAD R0 max_all
+LOAD R1 maxsum.retaddr
+PUSH R1
+RET
+max: POP R2
+POP R1
+POP R0
+PUSH R2
+COPY R2 R0
+SUB R2 R1
+JN max.lt
+max.exit: RET
+max.lt: COPY R0 R1
+JUMP max.exit
+maxsum.retaddr: WORD 9999
+END

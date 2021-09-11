@@ -1,0 +1,8 @@
+main: READ R0   ; R0 = b
+READ R1         ; R1 = e
+PUSH R0
+PUSH R1
+CALL exp
+WRITE R0
+HALT
+END

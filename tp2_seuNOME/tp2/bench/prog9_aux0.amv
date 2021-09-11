@@ -1,0 +1,14 @@
+exp: POP R2
+POP R1
+POP R0
+PUSH R2
+LOAD R2 const1
+COPY R3 R0
+JZ exp.zero
+exp.loop: SUB R1 R2
+JZ exp.exit
+MUL R0 R3
+JUMP exp.loop
+exp.zero: COPY R0 R2
+exp.exit: RET
+END

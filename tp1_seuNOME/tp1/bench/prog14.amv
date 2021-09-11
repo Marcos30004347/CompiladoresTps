@@ -1,0 +1,32 @@
+READ R0   ; R0 = k
+READ R1         ; R1 = n
+LOAD R2 const1
+SUB R0 R2       ; k - 1
+PUSH R1
+PUSH R0
+CALL sum        ; sum_{i = 0}^{k - 1}
+POP R1
+PUSH R0
+PUSH R1
+CALL sum        ; sum_{i = 0}^n
+POP R1
+SUB R0 R1       ; sum_{i = k}^n = sum_{i = 0}^n - sum_{i = 0}^{k - 1}
+WRITE R0
+HALT
+sum: POP R1     ; Calcula o somatório de i = 0 até m
+POP R0
+PUSH R1
+COPY R1 R0
+JN sum.zero
+LOAD R2 const1
+ADD R1 R2       ; m + 1
+MUL R0 R1       ; m * (m + 1)
+LOAD R1 const2
+DIV R0 R1       ; (m * (m + 1)) / 2
+sum.ret: RET
+sum.zero: LOAD R0 const0
+JUMP sum.ret
+const0: WORD 0
+const1: WORD 1
+const2: WORD 2
+END

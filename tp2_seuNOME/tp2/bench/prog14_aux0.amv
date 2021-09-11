@@ -1,0 +1,14 @@
+sum: POP R1
+POP R0
+PUSH R1
+COPY R1 R0
+JN sum.zero
+LOAD R2 const1
+ADD R1 R2       ; m + 1
+MUL R0 R1       ; m * (m + 1)
+LOAD R1 const2
+DIV R0 R1       ; (m * (m + 1)) / 2
+sum.ret: RET
+sum.zero: LOAD R0 const0
+JUMP sum.ret
+END

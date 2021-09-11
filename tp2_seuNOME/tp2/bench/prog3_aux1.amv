@@ -1,0 +1,19 @@
+median: POP R0
+STORE R0 median.retaddr
+LOAD R0 n
+LOAD R2 const2
+DIV R0 R2
+LOAD R1 const0           ; i = 0
+median.header: COPY R2 R0
+SUB R2 R1
+JZ median.exit
+median.body: POP R2
+median.latch: LOAD R2 const1
+ADD R1 R2             ; i = i + 1
+JUMP median.header
+median.exit: POP R0
+LOAD R1 median.retaddr
+PUSH R1
+RET
+median.retaddr: WORD 9999
+END

@@ -1,0 +1,14 @@
+main: CALL readSeq
+COPY R0 R0
+JN main.error
+CALL median
+WRITE R0
+HALT
+main.error: WRITE R0
+HALT
+const0: WORD 0
+const1: WORD 1
+const2: WORD 2
+errCode: WORD -1
+n: WORD 123
+END

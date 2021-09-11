@@ -1,0 +1,28 @@
+main: READ R1   ; Pensa em um número
+COPY R0 R1
+LOAD R2 const3
+MUL R0 R2       ; Multiplica por 3
+LOAD R2 const16
+ADD R0 R2       ; Acrescenta 16
+LOAD R2 const2
+MUL R0 R2       ; Multiplica por 2
+LOAD R2 const2
+SUB R0 R2       ; Subtrai 2
+LOAD R2 const6
+DIV R0 R2       ; Divide por 6
+SUB R0 R1       ; Subtrai o número que você pensou
+LOAD R1 const5
+SUB R0 R1       ; Deu 5!!!
+JZ success
+LOAD R0 errCode
+JUMP exit
+success: COPY R0 R1
+exit: WRITE R0
+HALT
+errCode: WORD -1
+const2: WORD 2
+const3: WORD 3
+const5: WORD 5
+const6: WORD 6
+const16: WORD 16
+END

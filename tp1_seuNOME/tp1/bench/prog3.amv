@@ -1,0 +1,44 @@
+READ R0           ; n = R0
+LOAD R1 const2
+COPY R2 R0
+MOD R2 R1
+JZ error          ; sequência de tamanho par não é aceita
+READ R1           
+PUSH R1           ; v[0]
+LOAD R1 const1    ; i = 1
+read.header: COPY R2 R0
+SUB R2 R1
+JZ read.exit 
+read.body: READ R2
+POP R3
+SUB R3 R2
+JZ read.ok       ; v[i - 1] == v[i] => ok
+JN read.ok       ; v[i - 1] < v[i] => ok
+JUMP error
+read.ok: ADD R3 R2      ; reconstrói v[i - 1]
+PUSH R3
+PUSH R2
+read.latch: LOAD R2 const1
+ADD R1 R2               ; i = i + 1
+JUMP read.header
+read.exit: LOAD R2 const2
+DIV R0 R2
+LOAD R1 const0           ; i = 0
+median.header: COPY R2 R0
+SUB R2 R1
+JZ exit
+median.body: POP R2
+median.latch: LOAD R2 const1
+ADD R1 R2             ; i = i + 1
+JUMP median.header
+exit: POP R0
+WRITE R0
+HALT
+error: LOAD R0 errCode
+WRITE R0
+HALT
+const0: WORD 0
+const1: WORD 1
+const2: WORD 2
+errCode: WORD -1
+END

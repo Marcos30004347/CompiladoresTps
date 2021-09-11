@@ -1,0 +1,9 @@
+main: READ R0   ; R0 = b
+READ R1         ; R1 = e, vamos computar p = b^e
+PUSH R0
+PUSH R1
+CALL exp
+WRITE R0
+HALT
+const1: WORD 1
+END

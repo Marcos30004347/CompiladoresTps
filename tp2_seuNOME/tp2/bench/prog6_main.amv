@@ -1,0 +1,12 @@
+main: READ R0
+COPY R0 R0
+JN main.error
+PUSH R0
+CALL factorial
+JUMP main.exit
+main.error: LOAD R0 const0
+main.exit: WRITE R0
+HALT
+const0: WORD 0
+const1: WORD 1
+END

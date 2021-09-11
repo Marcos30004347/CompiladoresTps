@@ -1,0 +1,20 @@
+READ R0   ; R0 = b
+LOAD R1 const1  ; R1 = p = 1
+LOAD R2 const2  ; R2 = 2
+READ R3         ; R3 = e
+loop: COPY R3 R3
+JZ exit
+STORE R3 e
+MOD R3 R2       ; e % 2
+JZ even
+MUL R1 R0       ; p = p * b
+even: LOAD R3 e
+MUL R0 R0       ; b = b^2
+DIV R3 R2       ; e = e / 2
+JUMP loop
+exit: WRITE R1
+HALT
+const1: WORD 1
+const2: WORD 2
+e: WORD -1
+END

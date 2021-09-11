@@ -1,0 +1,19 @@
+readvec: POP R0
+STORE R0 readvec.retaddr
+LOAD R0 v3
+PUSH R0
+LOAD R0 v2
+PUSH R0
+LOAD R0 v1
+PUSH R0
+LOAD R0 v0
+PUSH R0
+LOAD R0 readvec.retaddr
+PUSH R0
+RET
+v0: WORD 8
+v1: WORD 7
+v2: WORD -4
+v3: WORD 3
+readvec.retaddr: WORD 9999
+END

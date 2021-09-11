@@ -1,0 +1,8 @@
+main: READ R0
+PUSH R0
+CALL fib
+WRITE R0
+HALT
+const0: WORD 0
+const1: WORD 1
+END

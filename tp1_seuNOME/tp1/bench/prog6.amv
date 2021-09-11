@@ -1,0 +1,18 @@
+const0: WORD 0
+const1: WORD 1
+READ R0
+COPY R0 R0
+JN error
+JZ zero
+COPY R1 R0
+LOAD R2 const1
+loop: SUB R1 R2
+JZ exit
+MUL R0 R1
+JUMP loop
+error: LOAD R0 const0
+JUMP exit
+zero: LOAD R0 const1
+exit: WRITE R0
+HALT
+END

@@ -1,0 +1,22 @@
+LOAD R0 n
+LOAD R1 const1
+read.loop: SUB R0 R1
+JN read.exit
+READ R2
+PUSH R2
+JUMP read.loop
+read.exit: LOAD R0 n
+LOAD R2 const0
+max.loop: SUB R0 R1
+JN max.exit
+POP R3
+COPY R3 R3
+JN max.latch
+ADD R2 R3
+max.latch: JUMP max.loop
+max.exit: WRITE R2
+HALT
+const0: WORD 0
+const1: WORD 1
+n: WORD 5
+END

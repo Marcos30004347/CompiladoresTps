@@ -1,0 +1,110 @@
+LOAD R0 a10
+PUSH R0
+LOAD R0 b01
+PUSH R0
+LOAD R0 a11
+PUSH R0
+LOAD R0 b11
+PUSH R0
+LOAD R0 a12
+PUSH R0
+LOAD R0 b21
+PUSH R0
+LOAD R0 a10
+PUSH R0
+LOAD R0 b00
+PUSH R0
+LOAD R0 a11
+PUSH R0
+LOAD R0 b10
+PUSH R0
+LOAD R0 a12
+PUSH R0
+LOAD R0 b20
+PUSH R0
+LOAD R0 a00
+PUSH R0
+LOAD R0 b01
+PUSH R0
+LOAD R0 a01
+PUSH R0
+LOAD R0 b11
+PUSH R0
+LOAD R0 a02
+PUSH R0
+LOAD R0 b21
+PUSH R0
+LOAD R0 a00
+PUSH R0
+LOAD R0 b00
+PUSH R0
+LOAD R0 a01
+PUSH R0
+LOAD R0 b10
+PUSH R0
+LOAD R0 a02
+PUSH R0
+LOAD R0 b20
+PUSH R0
+loop1.header: LOAD R0 i
+LOAD R1 n         ; matriz C tem n linhas
+SUB R1 R0
+JZ loop1.exit
+loop2.preheader: LOAD R0 const0
+STORE R0 j
+loop2.header: LOAD R0 j
+LOAD R1 n         ; matriz C tem n colunas
+SUB R1 R0
+JZ loop1.latch
+loop3.preheader: LOAD R0 const0
+STORE R0 k
+STORE R0 tmp
+loop3.header: LOAD R0 k
+LOAD R1 m         ; Cnn = Anm x Bmn
+SUB R1 R0
+JZ loop2.latch
+loop3.body: POP R0
+POP R1
+MUL R0 R1
+LOAD R1 tmp
+ADD R0 R1           ; Cij = sum_k=0^m (Aik x Bkj)
+STORE R0 tmp
+loop3.latch: LOAD R0 k
+LOAD R1 const1
+ADD R0 R1          ; k = k + 1
+STORE R0 k
+JUMP loop3.header
+loop2.latch: LOAD R0 tmp
+WRITE R0           ; imprime Cij
+LOAD R0 j
+LOAD R1 const1
+ADD R0 R1          ; j = j + 1
+STORE R0 j
+JUMP loop2.header
+loop1.latch: LOAD R0 i
+LOAD R1 const1
+ADD R0 R1          ; i = i + 1
+STORE R0 i
+JUMP loop1.header
+loop1.exit: HALT
+const0: WORD 0
+const1: WORD 1
+i: WORD 0
+j: WORD 0
+k: WORD 0
+tmp: WORD 0
+a00: WORD 1
+a01: WORD 2
+a02: WORD 3
+a10: WORD 3
+a11: WORD 2
+a12: WORD 1
+b00: WORD 4
+b01: WORD 5
+b10: WORD 3
+b11: WORD 2
+b20: WORD 0
+b21: WORD 0
+n: WORD 2
+m: WORD 3
+END

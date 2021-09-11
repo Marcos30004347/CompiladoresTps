@@ -1,0 +1,33 @@
+readSeq: POP R0            ; Get return address and store
+STORE R0 read.retaddr    
+READ R0           ; n = R0
+STORE R0 n
+LOAD R1 const2
+COPY R2 R0
+MOD R2 R1
+JZ read.error     ; sequência de tamanho par não é aceita
+READ R1           
+PUSH R1           ; v[0]
+LOAD R1 const1    ; i = 1
+read.header: COPY R2 R0
+SUB R2 R1
+JZ read.exit 
+read.body: READ R2
+POP R3
+SUB R3 R2
+JZ read.ok       ; v[i - 1] == v[i] => ok
+JN read.ok       ; v[i - 1] < v[i] => ok
+JUMP read.error
+read.ok: ADD R3 R2      ; reconstrói v[i - 1]
+PUSH R3
+PUSH R2
+read.latch: LOAD R2 const1
+ADD R1 R2               ; i = i + 1
+JUMP read.header
+read.error: LOAD R0 errCode
+read.exit:
+LOAD R1 read.retaddr
+PUSH R1 ; PUSH the ret addr back to the stack
+RET
+read.retaddr: WORD 9999
+END

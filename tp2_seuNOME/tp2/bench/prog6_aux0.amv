@@ -1,0 +1,14 @@
+factorial: POP R1
+POP R0
+PUSH R1
+COPY R0 R0
+JZ factorial.zero
+COPY R1 R0
+LOAD R2 const1
+factorial.loop: SUB R1 R2
+JZ factorial.exit
+MUL R0 R1
+JUMP factorial.loop
+factorial.zero: LOAD R0 const1
+factorial.exit: RET
+END

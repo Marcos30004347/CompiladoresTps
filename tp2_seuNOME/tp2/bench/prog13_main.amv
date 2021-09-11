@@ -1,0 +1,16 @@
+main: LOAD R0 n
+LOAD R1 const1
+main.read.loop: SUB R0 R1
+JN main.read.exit
+READ R2
+PUSH R2
+JUMP main.read.loop
+main.read.exit: CALL maxsum
+WRITE R0
+HALT
+const0: WORD 0
+const1: WORD 1
+n: WORD 5
+max_all: WORD -1
+max_curr: WORD -1
+END

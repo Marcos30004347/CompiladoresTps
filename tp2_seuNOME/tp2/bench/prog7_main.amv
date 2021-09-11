@@ -1,0 +1,16 @@
+main: READ R0
+READ R1
+SUB R0 R1
+JN x_lt_y
+JZ x_eq_y
+LOAD R0 const1
+JUMP exit
+x_lt_y: LOAD R0 constNeg1
+JUMP exit
+x_eq_y: LOAD R0 const0
+exit: WRITE R0
+HALT
+constNeg1: WORD -1
+const0: WORD 0
+const1: WORD 1
+END

@@ -1,0 +1,29 @@
+READ R0
+PUSH R0
+CALL fib
+WRITE R0
+HALT
+fib: POP R0         ; Recupera endereço de retorno
+POP R1              ; Recupera argumento n
+PUSH R0             ; Reinsere endereço de retorno
+LOAD R0 const0
+SUB R1 R0
+JZ endfib           ; fib(0) = 0
+LOAD R0 const1
+SUB R1 R0
+JZ endfib           ; fib(1) = 1
+PUSH R1             ; Salva var. local (p/ recursão) R1 = n - 1
+PUSH R1
+CALL fib            ; call fib(n - 1)
+POP R2              ; Desempilha var. local R2 = n - 1
+LOAD R1 const1
+SUB R2 R1           ; R2 = n - 2
+PUSH R0             ; Salva variável local (p/ recursão)
+PUSH R2
+CALL fib            ; call fib(n - 2)
+POP R2              ; Desempilha variável local
+ADD R0 R2           ; fib(n) = fib(n - 1) + fib(n - 2)
+endfib: RET         ; R0 = fib(n)
+const0: WORD 0
+const1: WORD 1
+END

@@ -1,0 +1,50 @@
+main: CALL readvec
+sort: CALL swap                   ; swap(v[0], v[1])
+POP R0
+POP R1
+STORE R0 v0
+STORE R1 v1
+CALL swap                   ; swap(v[2], v[3])
+LOAD R1 v1
+PUSH R1 
+CALL swap                   ; swap(v[1], v[2])
+LOAD R0 v0
+PUSH R0
+CALL swap                   ; swap(v[0], v[1])
+POP R0
+POP R1
+STORE R0 v0
+STORE R1 v1
+CALL swap                   ; swap(v[2], v[3])
+LOAD R1 v1
+PUSH R1 
+CALL swap                   ; swap(v[1], v[2])
+LOAD R0 v0
+PUSH R0
+write.loop.preheader: LOAD R0 const0              ; i = 0
+write.loop: LOAD R1 n
+SUB R1 R0
+JZ exit
+POP R1
+WRITE R1
+LOAD R1 const1
+ADD R0 R1
+JUMP write.loop
+exit: HALT
+swap: POP R0                      ; Recupera endereço de retorno
+POP R1                      ; Recupera argumento a
+POP R2                      ; Recupera argumento b
+COPY R3 R1
+SUB R3 R2
+JN swap.lt                  ; a < b
+PUSH R1
+PUSH R2
+JUMP swap.exit
+swap.lt: PUSH R2
+PUSH R1
+swap.exit: PUSH R0  ; Reinsere endereço de retorno
+RET
+n: WORD 4
+const0: WORD 0
+const1: WORD 1
+END
